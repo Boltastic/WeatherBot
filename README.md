@@ -19,7 +19,6 @@ Bot.sendMessage(
   "🌍 *To get started, simply type the name of a city below.*"
 )
 
-Bot.runCommand("*")
 ```
 
 ---
