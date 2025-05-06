@@ -1,84 +1,108 @@
-# WeatherWiseRobot - chat bot
-It is repository for chat bot: [@WeatherWiseRobot](https://t.me/WeatherWiseRobot)
+# WeatherWiseBot — Bots.Business Integration
 
-## What it is?
-This repository can be imported to [Bots.Business](https://bots.business) as a worked chat bot.
+A simple Telegram bot built using **Bots.Business** that fetches real-time weather data from **WeatherAPI.com** based on user-inputted city names.
 
-[Bots.Business](https://bots.business) - it is probably the first CBPaaS - Chat Bot Platform as a Service.
+## Overview
 
-A CBPaaS is a cloud-based platform that enables developers to create chatbots without needing to build backend infrastructure.
+WeatherWiseBot allows users to type a city name and instantly receive the current temperature, weather condition, humidity, and wind speed for that location.
 
-## Create your own bot for Telegram from this Git repo
+## Commands Structure
 
-How to create bot?
-1. Create bot with [@BotFather](https://telegram.me/BotFather) and take Secret Token
-2. Create bot in App and add Secret Token
-3. Add Public Key from App as [Deploy key](https://developer.github.com/v3/guides/managing-deploy-keys/#deploy-keys) with read access (and write access for bot exporting if you need it)
-4. Do import for this git repo
+### `/start`
 
-Now you can talk with yours new Telegram Bot
+**Purpose:** Greet the user and instruct them to type a city name.
 
-See [more](https://help.bots.business/getting-started)
+```javascript
+Bot.sendMessage(
+  "👋 *Welcome to WeatherWiseBot!* 🌦️\n\n" +
+  "I can provide live weather updates for any city in the world.\n\n" +
+  "🌍 *To get started, simply type the name of a city below.*"
+)
 
-## Commands - in commands folder
-File name - it is command name (Bot it can be rewritten in command description)
+Bot.runCommand("*")
+```
 
-Command can have: `name`, `help`, `aliases` (second names), `answer`, `keyboard`, `scnarios` (for simple logic) and other options.
+---
 
-### Command description
-It is file header:
+### `*` (Any Message)
 
-    /*CMD
-      command: /test
-      help: this is help for ccommand
-      need_reply: [ true or false here ]
-      auto_retry_time: [ time in sec ]
-      answer: it is example answer for /test command
-      keyboard: button1, button2
-      aliases: /test2, /test3
-    CMD*/
+**Purpose:** Capture user input as a city name, call the WeatherAPI, and store the input.
 
-See [more](https://help.bots.business/commands)
+```javascript
+let city = message
+let apiKey = "YOUR_WEATHERAPI_KEY"
 
-### Command body
-It is command code in JavaScript.
-Use Bot Java Script for logic in command.
+HTTP.get({
+  url: "http://api.weatherapi.com/v1/current.json?key=" + apiKey + "&q=" + encodeURIComponent(city),
+  success: "/onWeather"
+})
 
-For example:
-> Bot.sendMessage(2+2);
+User.setProperty("lastCity", city, "string")
+```
 
-See [more](https://help.bots.business/scenarios-and-bjs)
+---
 
+### `/onWeather`
 
-## Libraries - in libs folder
-You can store common code in the libs folder. File name - it is library name.
+**Purpose:** Receive weather data from the API and display it nicely to the user.
 
-For example code in myLib.js:
+```javascript
+let result = JSON.parse(content)
 
-    function hello(){ Bot.sendMessage("Hello from lib!") }
-    function goodbye(name){ Bot.sendMessage("Goodbye, " + name) }
+if(result.error){
+  Bot.sendMessage("🚨 Couldn’t find weather for that city. Please check the spelling and try again.")
+  return
+}
 
-    publish({
-      sayHello: hello,
-      sayGoodbyeTo: goodbye
-    })
+let location = result.location
+let current = result.current
 
-then you can run in any bot's command:
+Bot.sendMessage(
+  "🌦️ *Weather in " + location.name + ", " + location.country + "*\n" +
+  "---------------------------------\n" +
+  "🌡️ *Temperature*: " + current.temp_c + "°C\n" +
+  "☁️ *Condition*: " + current.condition.text + "\n" +
+  "💧 *Humidity*: " + current.humidity + "%\n" +
+  "🌬️ *Wind*: " + current.wind_kph + " kph\n" +
+  "---------------------------------\n" +
+  "*Type another city name to check again!*"
+)
+```
 
-    Libs.myLib.hello()
-    Libs.myLib.sayGoodbyeTo("Alice")
+---
 
-See [more](https://help.bots.business/git/library)
+## Setup Instructions
 
-## Other bots example
-See other bots examples in the [github](https://github.com/bots-business?utf8=✓&tab=repositories&q=&type=public&language=javascript) or in the [Bot Store](https://bots.business/)
+1. Create a new bot on **Bots.Business**.
+2. Add `/start`, `*`, and `/onWeather` commands.
+3. Paste the corresponding code into each command.
+4. Replace `YOUR_WEATHERAPI_KEY` with your actual key from [WeatherAPI.com](https://weatherapi.com).
+5. Test your bot by typing `/start` and entering a city name.
 
+## Notes
 
-## Other help
-[Help.bots.business](https://help.bots.business)
+* Make sure to enable the HTTP module in Bots.Business.
+* API calls are made via HTTP GET to `http://api.weatherapi.com/v1/current.json`.
 
-## API
-See [API](https://api.bots.business/docs#/docs/summary)
+## Example API Response
 
+```json
+{
+  "location": {
+    "name": "London",
+    "country": "United Kingdom"
+  },
+  "current": {
+    "temp_c": 14.0,
+    "condition": {
+      "text": "Partly cloudy"
+    },
+    "humidity": 82,
+    "wind_kph": 11.9
+  }
+}
+```
 
-![](https://bots.business/images/web-logo.png)
+## License
+
+Free to use for personal and educational projects. Give Credit For Commercial Use
